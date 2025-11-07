@@ -1,19 +1,21 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 import mysql.connector
 import subprocess
 import os
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import timedelta # Para la duración de la sesión
 
-# === NOVEDAD: Importar CORS ===
+# Importar CORS para permitir peticiones entre puertos
 from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = 'cambia_esto_por_algo_muy_secreto_y_largo!'
+# Configurar la duración de la sesión del usuario público
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
-# === NOVEDAD: Habilitar CORS para toda la aplicación ===
-# Esto permitirá que localhost:8000 (tu index.html) hable con localhost:8080 (esta app)
-CORS(app)
+# Habilitar CORS, permitiendo credenciales (cookies) para la sesión
+CORS(app, supports_credentials=True)
 
 # --- Configuración de la DB ---
 DB_CONFIG = {
@@ -28,14 +30,14 @@ rasa_core_process = None
 rasa_actions_process = None
 project_path = os.path.dirname(os.path.abspath(__file__))
 
-# --- Configuración de Flask-Login ---
+# --- Configuración de Flask-Login (Para Administradores) ---
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'login' # La ruta @app.route('/login')
 login_manager.login_message = u"Por favor, inicie sesión para acceder."
 login_manager.login_message_category = "info"
 
-# --- Modelo de Usuario (busca en DB) ---
+# --- Modelo de Usuario (Para Administradores) ---
 class User(UserMixin):
     def __init__(self, id, username):
         self.id = id
@@ -48,6 +50,7 @@ class User(UserMixin):
         if conn:
             try:
                 cursor = conn.cursor(dictionary=True)
+                # Busca en la tabla 'admins'
                 cursor.execute("SELECT id, username FROM admins WHERE id = %s", (user_id,))
                 user_data = cursor.fetchone()
                 if user_data:
@@ -65,6 +68,7 @@ class User(UserMixin):
         if conn:
             try:
                 cursor = conn.cursor(dictionary=True)
+                # Busca en la tabla 'admins'
                 cursor.execute("SELECT id, username FROM admins WHERE username = %s", (username,))
                 user_data = cursor.fetchone()
                 if user_data:
@@ -88,7 +92,7 @@ def get_db_connection():
         print(f"Error de base de datos: {err}")
         return None
 
-# --- Rutas de Login/Logout ---
+# --- Rutas de Login/Logout (Para Administradores) ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -346,11 +350,17 @@ def public_login():
         
         if user and check_password_hash(user['password_hash'], password_plana):
             user_id_str = f"user_{user['id']}"
+            
+            # Guardar en la Sesión de Flask
+            session.permanent = True 
+            session['public_user_id'] = user['id']
+            session['public_username'] = user['username']
+            
             return jsonify({
                 "success": True, 
                 "message": f"¡Bienvenido, {user['username']}!",
-                "user_id": user_id_str,
-                "username": user['username']
+                "user_id": user_id_str, # ID para el bot.js/Rasa
+                "username": user['username'] # Nombre para mostrar en el frontend
             })
         else:
             return jsonify({"success": False, "message": "Email o contraseña incorrectos."}), 401
@@ -359,6 +369,66 @@ def public_login():
         return jsonify({"success": False, "message": f"Error de base de datos: {err}"}), 500
     finally:
         if conn: conn.close()
+
+# --- Ruta para la Página de Perfil ---
+@app.route('/profile')
+def profile():
+    # Verificar si el usuario está logueado (buscando en la sesión de Flask)
+    if 'public_user_id' not in session:
+        flash("Debes iniciar sesión para ver tu perfil.", "error")
+        return redirect(url_for('login')) 
+
+    user_id = session['public_user_id']
+    username = session.get('public_username', 'Usuario')
+    
+    preferencias = []
+    valoraciones = []
+    
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor(dictionary=True)
+            
+            # Buscar sus preferencias guardadas
+            query_prefs = "SELECT tipo_preferencia, valor_preferencia FROM preferencias_usuario WHERE usuario_id = %s"
+            cursor.execute(query_prefs, (user_id,))
+            preferencias = cursor.fetchall()
+            
+            # Buscar sus valoraciones de tours
+            query_vals = """
+                SELECT v.nombre as vina_nombre, vt.rating, vt.comentario
+                FROM valoraciones_tour vt
+                JOIN vinas v ON vt.vina_id = v.id
+                WHERE vt.usuario_id = %s
+                ORDER BY vt.fecha_valoracion DESC
+            """
+            cursor.execute(query_vals, (user_id,))
+            valoraciones = cursor.fetchall()
+            
+            cursor.close()
+            conn.close()
+        except mysql.connector.Error as err:
+            flash(f"Error al cargar tu perfil: {err}", "error")
+            
+    # Enviar los datos al nuevo template 'profile.html'
+    return render_template('profile.html', 
+                           username=username, 
+                           preferencias=preferencias, 
+                           valoraciones=valoraciones)
+
+# --- Ruta para Cerrar Sesión Pública ---
+@app.route('/public_logout')
+def public_logout():
+    # Limpiar la sesión pública de Flask
+    session.pop('public_user_id', None)
+    session.pop('public_username', None)
+    
+    if request.referrer and '8000' in request.referrer:
+        return jsonify({"success": True, "message": "Sesión cerrada"})
+    else:
+        flash("Sesión cerrada exitosamente.", "success")
+        return redirect("http://localhost:8000/index.html")
+
 
 # --- Iniciar el servidor del panel ---
 if __name__ == '__main__':

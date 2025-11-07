@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ID de Sesión del Usuario ---
     // Intenta obtener el ID de usuario guardado. Si no existe, crea uno de sesión temporal.
-    // Este ID se enviará a Rasa con CADA mensaje.
     let RASA_SENDER_ID = localStorage.getItem('vinai_user_id') || `session_${Date.now()}`;
 
     // --- Generador de Avatares Local ---
@@ -44,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleChat() {
         chatContainer.classList.toggle('open');
         if (chatContainer.classList.contains('open') && messagesDiv.children.length === 0) {
-            // Inicia la conversación con el payload de saludo
             sendPayload('/saludar', ''); 
             userInput.focus();
         }
@@ -67,14 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
         bubble.classList.add('bubble');
         
         const textElement = document.createElement('div');
-        textElement.innerHTML = text; // Usamos innerHTML para renderizar <strong>, etc.
+        textElement.innerHTML = text; 
         bubble.appendChild(textElement);
 
-        // Renderizar imágenes (Mapas) si el bot las envía
+        // Renderizar imágenes (Mapas)
         if (customData.image) {
             const imageElement = document.createElement('img');
             imageElement.src = customData.image;
-            imageElement.classList.add('chat-image'); // (Deberás añadir un estilo CSS para .chat-image)
+            imageElement.classList.add('chat-image');
             bubble.appendChild(imageElement);
         }
 
@@ -111,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(RASA_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Envía el RASA_SENDER_ID
                 body: JSON.stringify({ sender: RASA_SENDER_ID, message: message })
             });
 
@@ -123,8 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const messageText = botMessage.text || '';
                     const custom = botMessage.custom || {};
                     
-                    // Detecta si el bot nos dio un User ID (tras login)
-                    if (custom.user_id) {
+                    if (custom.user_id) { //
                         RASA_SENDER_ID = custom.user_id;
                         localStorage.setItem('vinai_user_id', RASA_SENDER_ID);
                         console.log(`Usuario logueado. Sender ID es ahora: ${RASA_SENDER_ID}`);
@@ -133,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     addMessage('bot', messageText, { 
                         link: custom.link, 
                         link_text: custom.link_text,
-                        image: botMessage.image // Acepta la imagen del bot
+                        image: botMessage.image
                     });
                     
                     if (isSpeakingEnabled && messageText) {
@@ -151,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function sendPayload(payload, title) {
-        if (title) { // Solo muestra el mensaje de usuario si hay un título
+        if (title) {
             addMessage('user', title); 
         }
         showTypingIndicator(true);
@@ -159,7 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(RASA_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Envía el RASA_SENDER_ID
                 body: JSON.stringify({ sender: RASA_SENDER_ID, message: payload })
             });
             const data = await response.json();
@@ -170,8 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const messageText = botMessage.text || '';
                     const custom = botMessage.custom || {};
 
-                    // Detecta si el bot nos dio un User ID (tras login)
-                     if (custom.user_id) {
+                     if (custom.user_id) { //
                         RASA_SENDER_ID = custom.user_id;
                         localStorage.setItem('vinai_user_id', RASA_SENDER_ID);
                         console.log(`Usuario logueado. Sender ID es ahora: ${RASA_SENDER_ID}`);
@@ -180,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     addMessage('bot', messageText, { 
                         link: custom.link, 
                         link_text: custom.link_text,
-                        image: botMessage.image // Acepta la imagen del bot
+                        image: botMessage.image
                     });
                     
                     if (isSpeakingEnabled && messageText) {
@@ -226,26 +220,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Inicialización y Asignación de Eventos (Chatbot) ---
-    initSpeechRecognition(); //
-
-    chatBubble.addEventListener('click', toggleChat); //
-    closeButton.addEventListener('click', toggleChat); //
-    sendButton.addEventListener('click', () => sendMessageToRasa(userInput.value)); //
-    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessageToRasa(userInput.value); }); //
-
-    voiceButton.addEventListener('click', () => { //
+    initSpeechRecognition(); 
+    chatBubble.addEventListener('click', toggleChat); 
+    closeButton.addEventListener('click', toggleChat); 
+    sendButton.addEventListener('click', () => sendMessageToRasa(userInput.value)); 
+    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessageToRasa(userInput.value); }); 
+    voiceButton.addEventListener('click', () => { 
         if (!recognition) return;
         if (isListening) { recognition.stop(); } 
         else { try { recognition.start(); } catch(e) { console.error("Error al iniciar escucha:", e); } }
     });
-
-    speakerButton.addEventListener('click', () => { //
+    speakerButton.addEventListener('click', () => { 
         isSpeakingEnabled = !isSpeakingEnabled;
         speakerButton.innerHTML = isSpeakingEnabled ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
         if (!isSpeakingEnabled) speechSynthesis.cancel(); 
     });
-
-    document.querySelectorAll('#quick-replies button').forEach(button => { //
+    document.querySelectorAll('#quick-replies button').forEach(button => { 
         button.addEventListener('click', () => {
             sendPayload(button.dataset.payload, button.textContent);
         });
@@ -259,19 +249,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const userModalBackdrop = document.getElementById('user-modal-backdrop');
     const userModal = document.getElementById('user-modal');
     const modalCloseButton = document.getElementById('modal-close-button');
-    // Busca el enlace "Usuario" en la navbar
     const userNavLink = document.querySelector('.nav-link[href="http://localhost:8080/login"]'); 
-    const navUsernameSpan = document.createElement('span'); // Para mostrar "Hola, Usuario"
-    navUsernameSpan.style.marginRight = '15px';
-    navUsernameSpan.style.color = '#D4AF37';
-    navUsernameSpan.style.fontWeight = '700';
+    
+    // --- Elemento para "Mi Perfil" ---
+    const profileLink = document.createElement('a');
+    profileLink.href = 'http://localhost:8080/profile'; //
+    profileLink.target = '_blank';
+    profileLink.textContent = 'Mi Perfil';
+    profileLink.className = 'nav-link';
+    profileLink.style.color = '#D4AF37';
+    profileLink.style.fontWeight = '700';
+    profileLink.style.display = 'none'; // Oculto al inicio
+    
+    if (userNavLink) {
+        userNavLink.parentElement.insertAdjacentElement('beforebegin', profileLink);
+    }
 
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
     const showRegisterLink = document.getElementById('show-register-link');
     const showLoginLink = document.getElementById('show-login-link');
     const modalTitle = document.getElementById('modal-title');
-    
     const loginError = document.getElementById('login-error');
     const registerError = document.getElementById('register-error');
 
@@ -307,14 +305,17 @@ document.addEventListener('DOMContentLoaded', () => {
         userNavLink.addEventListener('click', (e) => {
             e.preventDefault();
             
-            // Comprueba si el usuario YA está logueado
             if (localStorage.getItem('vinai_user_id')) {
                 if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                    localStorage.removeItem('vinai_user_id');
-                    location.reload(); // Recarga la página para limpiar todo
+                    // *** CORRECCIÓN DE SESIÓN ***
+                    // Llamamos a la ruta de logout CON credenciales
+                    fetch('http://localhost:8080/public_logout', { credentials: 'include' })
+                        .then(() => {
+                            localStorage.removeItem('vinai_user_id');
+                            location.reload(); 
+                        });
                 }
             } else {
-                // Si no está logueado, abre el modal de login
                 openModal();
                 showLoginForm();
             }
@@ -326,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showRegisterLink.addEventListener('click', showRegisterForm);
     showLoginLink.addEventListener('click', showLoginForm);
 
-// --- Evento de Formulario de Login ---
+    // --- Evento de Formulario de Login ---
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginError.textContent = '';
@@ -334,11 +335,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = loginForm.password.value;
 
         try {
-            // === NOVEDAD: URL Absoluta al puerto 8080 ===
+            // Apunta a la URL absoluta en el puerto 8080
             const response = await fetch('http://localhost:8080/public_login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email, password }),
+                // *** CORRECCIÓN DE SESIÓN ***
+                // Enviar credenciales (cookies) para la sesión
+                credentials: 'include' 
             });
             
             const data = await response.json();
@@ -346,9 +350,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 RASA_SENDER_ID = data.user_id;
                 localStorage.setItem('vinai_user_id', data.user_id); 
-                navUsernameSpan.textContent = `Hola, ${data.username}`;
-                userNavLink.parentElement.prepend(navUsernameSpan);
-                userNavLink.textContent = 'Cerrar Sesión';
+                
+                // Actualizar la barra de navegación
+                profileLink.style.display = 'inline-block'; // Muestra "Mi Perfil"
+                userNavLink.textContent = 'Cerrar Sesión'; 
+                
                 closeModal();
                 sendPayload('/saludar', ''); 
             } else {
@@ -368,11 +374,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = registerForm.password.value;
 
         try {
-            // === NOVEDAD: URL Absoluta al puerto 8080 ===
+            // Apunta a la URL absoluta en el puerto 8080
             const response = await fetch('http://localhost:8080/public_register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password })
+                body: JSON.stringify({ username, email, password }),
+                // *** CORRECCIÓN DE SESIÓN ***
+                // Enviar credenciales (cookies)
+                credentials: 'include'
             });
 
             const data = await response.json();
@@ -390,14 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Lógica al Cargar la Página (para ver si ya está logueado) ---
     if (localStorage.getItem('vinai_user_id')) {
-         userNavLink.textContent = 'Cerrar Sesión';
-    }
-
-    // --- Lógica al Cargar la Página (para ver si ya está logueado) ---
-    if (localStorage.getItem('vinai_user_id')) {
-         userNavLink.textContent = 'Cerrar Sesión';
-         // (Opcional: podríamos hacer un fetch a /get_user_details para obtener el nombre)
-         // Por ahora, solo cambiar el texto es suficiente.
+         profileLink.style.display = 'inline-block'; // Muestra "Mi Perfil"
+         userNavLink.textContent = 'Cerrar Sesión'; // Cambia "Usuario"
     }
 
 }); // Cierre del 'DOMContentLoaded'

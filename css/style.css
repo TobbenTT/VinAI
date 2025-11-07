@@ -109,7 +109,7 @@ header::before {
 header .background-image-animated {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background-image: url('https://picsum.photos/seed/luxury-vineyard/1600/800');
+    background-image: url('https://picsum.photos/seed/luxury-vineyard/1600/800'); /*Poner imagen de viñedo*/
     background-size: cover;
     background-position: center;
     animation: slowZoom 25s infinite alternate ease-in-out;

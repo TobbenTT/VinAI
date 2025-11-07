@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Perfil - VinAI</title>
+    <style>
+        body { font-family: 'Montserrat', sans-serif; background: #121212; color: #F5F5F5; padding: 20px; }
+        h1, h2 { font-family: 'Playfair Display', serif; color: #D4AF37; }
+        .container { max-width: 1000px; margin: auto; }
+        .panel { background: #1A1A1A; padding: 25px; border-radius: 5px; margin-bottom: 30px; border: 1px solid #2A2A2A; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; }
+        .button { 
+            background: #D4AF37; color: #121212; border: none; padding: 12px 20px; border-radius: 5px; 
+            font-weight: 700; font-size: 1em; cursor: pointer; transition: all 0.3s; text-decoration: none;
+            display: inline-block; text-align: center;
+        }
+        .button:hover { background: #E8C44D; }
+        .button.logout { background: none; border: 1px solid #dc3545; color: #dc3545; font-size: 0.9em; padding: 8px 15px; }
+        .button.logout:hover { background: #dc3545; color: white; }
+        
+        .profile-list { list-style: none; padding-left: 0; }
+        .profile-list li {
+            background: #2E2E2E; padding: 15px; border-radius: 5px; margin-bottom: 10px;
+            border-left: 4px solid #D4AF37;
+        }
+        .profile-list .pref-tipo {
+            text-transform: capitalize;
+            font-weight: 600;
+            color: #AAA;
+            display: block;
+            font-size: 0.9em;
+        }
+        .profile-list .pref-valor {
+            font-size: 1.2em;
+        }
+        .rating { color: #D4AF37; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="admin-header">
+            <h1><i class="fas fa-user-circle"></i> Mi Perfil</h1>
+            <div>
+                <span style="margin-right: 15px;">Hola, <strong>{{ username }}</strong></span>
+                <a href="http://localhost:8080/public_logout" class="button logout">Cerrar Sesión</a>
+            </div>
+        </div>
+        <p><a href="http://localhost:8000/index.html" class="button">Volver al inicio</a></p>
+
+        <div class="panel">
+            <h2><i class="fas fa-wine-glass-alt"></i> Mis Preferencias de Vino</h2>
+            {% if preferencias %}
+                <ul class="profile-list">
+                {% for pref in preferencias %}
+                    <li>
+                        <span class="pref-tipo">{{ pref.tipo_preferencia }}</span>
+                        <span class="pref-valor">{{ pref.valor_preferencia }}</span>
+                    </li>
+                {% endfor %}
+                </ul>
+                <p>Puedes actualizar tus gustos en cualquier momento hablando con VinAI.</p>
+            {% else %}
+                <p>Aún no has guardado ninguna preferencia.</p>
+                <p>Prueba a decirle al bot: <i>"guarda que me gusta el Carmenere"</i>.</p>
+            {% endif %}
+        </div>
+        
+        <div class="panel">
+            <h2><i class="fas fa-route"></i> Mis Valoraciones de Tours</h2>
+            {% if valoraciones %}
+                <ul class="profile-list">
+                {% for val in valoraciones %}
+                    <li>
+                        <span class="pref-tipo">Viña {{ val.vina_nombre }}</span>
+                        <span class="pref-valor rating">
+                            {% for i in range(val.rating) %}<i class="fas fa-star"></i>{% endfor %}
+                        </span>
+                        {% if val.comentario %}
+                            <p style="color: #CCC; margin-top: 10px;"><i>"{{ val.comentario }}"</i></p>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>Aún no has valorado ningún tour.</p>
+                <p>Prueba a decirle al bot: <i>"quiero valorar Santa Rita con 5 estrellas"</i>.</p>
+            {% endif %}
+        </div>
+
+    </div>
+</body>
+</html>

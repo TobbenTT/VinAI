@@ -127,13 +127,13 @@ def admin_panel():
     global rasa_core_process, rasa_actions_process
     core_status = "Detenido"
     actions_status = "Detenido"
-    # === CORRECCIÓN: Comprueba si el proceso existe Y si está corriendo ===
     if rasa_core_process and rasa_core_process.poll() is None:
         core_status = "Corriendo"
     if rasa_actions_process and rasa_actions_process.poll() is None:
         actions_status = "Corriendo"
     return render_template('admin.html', core_status=core_status, actions_status=actions_status)
 
+# --- Ruta para Añadir Vino ---
 @app.route('/add_wine', methods=['POST'])
 @login_required
 def add_wine():
@@ -157,6 +157,44 @@ def add_wine():
             flash(f"Error al añadir el vino: {err}", 'error')
     return redirect(url_for('admin_panel'))
 
+# --- Ruta ÚNICA para Añadir Viña (con latitud y longitud) ---
+@app.route('/add_vina', methods=['POST'])
+@login_required
+def add_vina():
+    # 1. Obtener datos del formulario
+    nombre = request.form['nombre']
+    valle = request.form['valle']
+    descripcion_tour = request.form['descripcion_tour']
+    horario_tour = request.form['horario_tour']
+    link_web = request.form['link_web']
+    # Nuevos campos de coordenadas
+    latitud = request.form.get('latitud') # .get() para que sea opcional
+    longitud = request.form.get('longitud')
+    
+    # Convertir a None si están vacíos, para que la DB acepte NULL
+    latitud = latitud if latitud else None
+    longitud = longitud if longitud else None
+
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            # 2. Crear la consulta SQL actualizada
+            query = """
+                INSERT INTO vinas (nombre, valle, descripcion_tour, horario_tour, link_web, latitud, longitud) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            # 3. Ejecutar la consulta
+            cursor.execute(query, (nombre, valle, descripcion_tour, horario_tour, link_web, latitud, longitud))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            flash(f"¡Viña '{nombre}' añadida con éxito!", 'success')
+        except mysql.connector.Error as err:
+            flash(f"Error al añadir la viña: {err}", 'error')
+    return redirect(url_for('admin_panel'))
+
+# --- Rutas de Control del Bot ---
 @app.route('/start_bot')
 @login_required
 def start_bot():
@@ -165,7 +203,6 @@ def start_bot():
     started_actions = False
 
     try:
-        # === CORRECCIÓN: Inicia solo si está detenido ===
         if rasa_core_process is None or rasa_core_process.poll() is not None:
             rasa_core_process = subprocess.Popen(['rasa', 'run', '--enable-api'], cwd=project_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             flash("Iniciando servidor Rasa Core...", 'info')
@@ -185,7 +222,6 @@ def start_bot():
 
     except Exception as e:
         flash(f"Error al iniciar los servidores: {e}", 'error')
-        # Si falla al iniciar, resetea las variables por si acaso
         rasa_core_process = None
         rasa_actions_process = None
         
@@ -200,10 +236,10 @@ def stop_bot():
 
     if rasa_core_process and rasa_core_process.poll() is None:
         try:
-            rasa_core_process.terminate() # Intenta terminarlo amablemente
-            rasa_core_process.wait(timeout=5) # Espera 5 segundos
+            rasa_core_process.terminate() 
+            rasa_core_process.wait(timeout=5) 
         except subprocess.TimeoutExpired:
-            rasa_core_process.kill() # Si no termina, lo fuerza
+            rasa_core_process.kill() 
         rasa_core_process = None
         flash("Servidor Rasa Core detenido.", 'success')
         stopped_core = True
@@ -227,7 +263,6 @@ def stop_bot():
 @login_required
 def rasa_train():
     global rasa_core_process, rasa_actions_process
-    # === CORRECCIÓN: Verifica si los servidores están detenidos antes de entrenar ===
     core_running = rasa_core_process and rasa_core_process.poll() is None
     actions_running = rasa_actions_process and rasa_actions_process.poll() is None
 
@@ -237,16 +272,14 @@ def rasa_train():
         
     try:
         flash("Iniciando re-entrenamiento... Esto puede tardar unos minutos.", 'info')
-        # Usamos check=False para poder capturar el error si falla
         completed_process = subprocess.run(
             ['rasa', 'train'], 
             cwd=project_path, 
             capture_output=True, 
             text=True,
-            check=False # Cambiado a False
+            check=False 
         )
         
-        # Revisamos si el comando falló
         if completed_process.returncode != 0:
              flash(f"Error durante el entrenamiento:\n{completed_process.stderr}", 'error')
         else:
@@ -257,54 +290,77 @@ def rasa_train():
         flash(f"Error inesperado al ejecutar el entrenamiento: {e}", 'error')
         
     return redirect(url_for('admin_panel'))
+# ----------------------------------------------
+# --- RUTAS PÚBLICAS (Para el Modal de Usuario) ---
+# ----------------------------------------------
+from flask import jsonify # Asegúrate de añadir 'jsonify' a tus imports de flask al inicio
 
-# -------------------------------------------------------------
-# --- FUNCIÓN PARA CREAR EL USUARIO ADMINISTRADOR INICIAL ---
-# -------------------------------------------------------------
-def create_initial_admin_user():
-    """
-    Crea el usuario administrador inicial si no existe.
-    Usa 'username' y 'password_hash' para la inserción.
-    """
-    # Credenciales del usuario primario
-    username = "EnoturismoAD"
-    # ¡ADVERTENCIA! Esta contraseña es muy insegura. Cambiala inmediatamente.
-    password = "123456" 
-    
-    # Genera el hash de la contraseña para almacenarla de forma segura
-    password_hash = generate_password_hash(password)
-    
+@app.route('/public_register', methods=['POST'])
+def public_register():
+    data = request.json
+    username = data.get('username')
+    email = data.get('email')
+    password_plana = data.get('password')
+
+    if not username or not email or not password_plana:
+        return jsonify({"success": False, "message": "Faltan datos."}), 400
+
+    password_hash = generate_password_hash(password_plana)
     conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor(dictionary=True)
-            
-            # 1. Verifica si el usuario ya existe
-            cursor.execute("SELECT id FROM admins WHERE username = %s", (username,))
-            user_exists = cursor.fetchone()
-            
-            if not user_exists:
-                # 2. Si NO existe, lo insertamos. 
-                query = "INSERT INTO admins (username, password_hash) VALUES (%s, %s)"
-                cursor.execute(query, (username, password_hash))
-                conn.commit()
-                # Mensajes sin caracteres especiales para evitar errores de codificación
-                print(f"--- Usuario administrador '{username}' creado exitosamente (Contraseña: {password}).")
-                print("--- ADVERTENCIA: ¡CAMBIA LA CONTRASEÑA POR SEGURIDAD! ---")
-            else:
-                # Mensaje simplificado
-                print(f"--- El usuario administrador '{username}' ya existe. No se creo de nuevo.")
-                
-            cursor.close()
-            conn.close()
-            
-        except mysql.connector.Error as err:
-            print(f"--- Error al crear el usuario administrador inicial: {err}")
+    if not conn:
+        return jsonify({"success": False, "message": "Error de conexión a la base de datos."}), 500
+        
+    try:
+        cursor = conn.cursor()
+        # Inserta en la tabla 'usuarios'
+        query = "INSERT INTO usuarios (username, email, password_hash) VALUES (%s, %s, %s)"
+        cursor.execute(query, (username, email, password_hash))
+        conn.commit()
+        return jsonify({"success": True, "message": "¡Registro exitoso! Ahora puedes iniciar sesión."})
+        
+    except mysql.connector.Error as err:
+        if err.errno == 1062: # Error de Llave Duplicada
+            return jsonify({"success": False, "message": "El email o usuario ya está registrado."}), 409
+        else:
+            return jsonify({"success": False, "message": f"Error de base de datos: {err}"}), 500
+    finally:
+        if conn: conn.close()
 
+@app.route('/public_login', methods=['POST'])
+def public_login():
+    data = request.json
+    email = data.get('email')
+    password_plana = data.get('password')
 
+    if not email or not password_plana:
+        return jsonify({"success": False, "message": "Faltan datos."}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "message": "Error de conexión a la base de datos."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        # Busca en la tabla 'usuarios'
+        cursor.execute("SELECT id, username, password_hash FROM usuarios WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        
+        if user and check_password_hash(user['password_hash'], password_plana):
+            user_id_str = f"user_{user['id']}" # Este es el ID que usará Rasa/bot.js
+            return jsonify({
+                "success": True, 
+                "message": f"¡Bienvenido, {user['username']}!",
+                "user_id": user_id_str, # Enviamos el ID al frontend
+                "username": user['username']
+            })
+        else:
+            return jsonify({"success": False, "message": "Email o contraseña incorrectos."}), 401
+            
+    except mysql.connector.Error as err:
+        return jsonify({"success": False, "message": f"Error de base de datos: {err}"}), 500
+    finally:
+        if conn: conn.close()
+        
 # --- Iniciar el servidor del panel ---
 if __name__ == '__main__':
-    # Llama a la función para asegurar que el usuario administrador inicial exista
-    create_initial_admin_user() 
-    
     app.run(debug=True, port=8080)

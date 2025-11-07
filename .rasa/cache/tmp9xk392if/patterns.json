@@ -1,0 +1,30 @@
+[
+  {
+    "name": "caracteristica",
+    "pattern": "(\\bRobusto\\b|\\bFresco\\b|\\bSeco\\b|\\bDulce\\b|\\bOrgánico\\b|\\bReserva\\b|\\bLigero\\b|\\bMineral\\b|\\bBiodinámico\\b|\\bJoven\\b)"
+  },
+  {
+    "name": "maridaje",
+    "pattern": "(\\bParrillada\\b|\\bSushi\\b|\\bCharcutería\\b|\\bPescado\\ Blanco\\b|\\bPostres\\b|\\bComida\\ Asiatica\\b|\\bPizza\\b|\\bPastas\\ con\\ Salsa\\ Roja\\b|\\bMariscos\\b|\\bEnsaladas\\b)"
+  },
+  {
+    "name": "sabor_nota",
+    "pattern": "(\\bVainilla\\b|\\bGuinda\\b|\\bPimienta\\b|\\bManzana\\b|\\bCítrico\\b|\\bChocolate\\b|\\bCereza\\b|\\bDurazno\\b|\\bMiel\\b|\\bTabaco\\b|\\bHierba\\b|\\bCafé\\b|\\bFrambuesa\\b)"
+  },
+  {
+    "name": "cepa",
+    "pattern": "(\\bCabernet\\ Sauvignon\\b|\\bCarmenere\\b|\\bMerlot\\b|\\bPinot\\ Noir\\b|\\bChardonnay\\b|\\bSauvignon\\ Blanc\\b)"
+  },
+  {
+    "name": "tipo_vino",
+    "pattern": "(\\btinto\\b|\\bblanco\\b|\\brosado\\b|\\bespumante\\b)"
+  },
+  {
+    "name": "valle",
+    "pattern": "(\\bMaipo\\b|\\bColchagua\\b|\\bAconcagua\\b|\\bCasablanca\\b|\\bLeyda\\b)"
+  },
+  {
+    "name": "vina",
+    "pattern": "(\\bConcha\\ y\\ Toro\\b|\\bSanta\\ Rita\\b|\\bCasa\\ Silva\\b|\\bMontes\\b|\\bViña\\ Errázuriz\\b)"
+  }
+]

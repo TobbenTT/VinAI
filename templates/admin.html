@@ -9,19 +9,27 @@
         .container { max-width: 1000px; margin: auto; }
         .panel { background: #1A1A1A; padding: 25px; border-radius: 5px; margin-bottom: 30px; border: 1px solid #2A2A2A; }
         form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        input, select { width: 100%; padding: 10px; background: #2E2E2E; color: #F5F5F5; border: 1px solid #444; border-radius: 5px; box-sizing: border-box; }
+        
+        /* Asegura que textarea tenga el mismo estilo */
+        input, select, textarea { 
+            width: 100%; padding: 10px; background: #2E2E2E; color: #F5F5F5; 
+            border: 1px solid #444; border-radius: 5px; box-sizing: border-box; 
+            font-family: 'Montserrat', sans-serif; 
+        }
+        
         button, .button { 
             background: #D4AF37; color: #121212; border: none; padding: 12px 20px; border-radius: 5px; 
             font-weight: 700; font-size: 1em; cursor: pointer; transition: all 0.3s; text-decoration: none;
             display: inline-block; text-align: center;
         }
         button:hover, .button:hover { background: #E8C44D; }
-        /* === NOVEDAD: Estilo para botones deshabilitados === */
+        
+        /* Estilo para botones deshabilitados */
         button:disabled, .button.disabled {
-            background: #555 !important; /* Fondo gris */
-            color: #999 !important;      /* Texto gris */
-            cursor: not-allowed !important; /* Cursor de no permitido */
-            pointer-events: none;       /* Desactiva clics en enlaces 'a' */
+            background: #555 !important; 
+            color: #999 !important;      
+            cursor: not-allowed !important; 
+            pointer-events: none;       
         }
 
         .button.start { background: #28a745; color: white; }
@@ -78,6 +86,27 @@
                     <strong>{{ actions_status }}</strong>
                 </span>
             </div>
+        </div>
+
+        <div class="panel">
+            <h2><i class="fas fa-map-marked-alt"></i> Añadir Nueva Viña</h2>
+            <p>Las viñas añadidas aquí estarán disponibles para el bot <strong>instantáneamente</strong>.</p>
+            <form action="/add_vina" method="POST">
+                <div><label for="vina_nombre">Nombre de la Viña:</label><input type="text" id="vina_nombre" name="nombre" required></div>
+                <div><label for="vina_valle">Valle:</label><input type="text" id="vina_valle" name="valle"></div>
+                
+                <div class="full-width"><label for="vina_desc">Descripción del Tour:</label>
+                    <textarea id="vina_desc" name="descripcion_tour" rows="4"></textarea>
+                </div>
+                
+                <div><label for="vina_horario">Horario del Tour:</label><input type="text" id="vina_horario" name="horario_tour" placeholder="Ej: Lunes a Viernes (10:00 - 17:00)"></div>
+                <div><label for="vina_link">Link (Sitio Web):</label><input type="url" id="vina_link" name="link_web" placeholder="https://..."></div>
+                
+                <div><label for="vina_lat">Latitud (Opcional):</label><input type="text" id="vina_lat" name="latitud" placeholder="Ej: -33.588941"></div>
+                <div><label for="vina_lon">Longitud (Opcional):</label><input type="text" id="vina_lon" name="longitud" placeholder="Ej: -70.570183"></div>
+                
+                <div class="full-width"><button type="submit">Añadir Viña a la Base de Datos</button></div>
+            </form>
         </div>
 
         <div class="panel">

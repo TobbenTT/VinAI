@@ -22,12 +22,10 @@ nlu:
     - busco un [Cabernet](cepa) [Robusto](caracteristica)
     - qué vino [dulce](caracteristica) me sugieres
     - un [tinto](tipo_vino) con notas a [chocolate](sabor_nota)
-    # === NOVEDAD: Ejemplos que incluyen el año ===
     - quiero un tinto del [2020](ano)
     - dame un vino de [1999](ano)
     - busco un [Cabernet Sauvignon](cepa) de [2018](ano)
 
-# === NOVEDAD: Intent específico para cuando el usuario solo da el año ===
 - intent: informar_ano
   examples: |
     - del año [1987](ano)
@@ -56,6 +54,43 @@ nlu:
     - recomiéndame un tour
     - qué viña puedo visitar
     - recomiéndame un tour en el [Valle de Aconcagua](valle)
+
+- intent: registrar_usuario
+  examples: |
+    - quiero crear una cuenta
+    - registrarme
+    - crear un perfil nuevo
+    - me gustaría registrarme
+    - suscribirme
+
+- intent: iniciar_sesion
+  examples: |
+    - quiero iniciar sesión
+    - entrar a mi cuenta
+    - login
+    - mi email es [test@gmail.com](email)
+    - quiero entrar con [joseph@parra.cl](email)
+
+- intent: guardar_preferencia_vino
+  examples: |
+    - guarda que me gusta el [Carmenere](cepa)
+    - mi cepa favorita es [Syrah](cepa)
+    - anota que prefiero los [vinos de Colchagua](valle)
+    - guarda este gusto
+    - me gustan los vinos con [parrillada](maridaje)
+    - prefiero los [tintos](tipo_vino)
+    - anota que me gustan [secos](caracteristica)
+
+- intent: valorar_tour
+  examples: |
+    - quiero valorar el tour de [Santa Rita](vina)
+    - calificar el recorrido de [Concha y Toro](vina)
+    - me gustaría darle 5 estrellas a [Montes](vina)
+    - valorar una viña
+
+# === CORRECCIÓN: Los 'lookup' van aquí, al nivel superior ===
+# No deben estar dentro del 'intent: valorar_tour'
+
 - lookup: caracteristica
   examples: |
     - Robusto

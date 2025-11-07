@@ -1,5 +1,7 @@
+// Espera a que todo el HTML esté cargado antes de ejecutar el script
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Selección de Elementos del DOM ---
+
+    // --- Selección de Elementos del DOM (Chatbot) ---
     const chatContainer = document.getElementById('chat-container');
     const chatBubble = document.getElementById('chat-bubble');
     const closeButton = document.getElementById('close-button');
@@ -13,9 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Configuración y Constantes ---
     const RASA_API_URL = 'http://localhost:5005/webhooks/rest/webhook';
     const BOT_NAME = 'VinAI Sommelier'; 
-    
-    // === CORRECCIÓN DEFINITIVA: Generador de Avatares Local ===
-    // Esta función crea un avatar como una imagen SVG, eliminando la dependencia de servicios externos.
+
+    // --- ID de Sesión del Usuario ---
+    // Intenta obtener el ID de usuario guardado. Si no existe, crea uno de sesión temporal.
+    // Este ID se enviará a Rasa con CADA mensaje.
+    let RASA_SENDER_ID = localStorage.getItem('vinai_user_id') || `session_${Date.now()}`;
+
+    // --- Generador de Avatares Local ---
     function createAvatarUrl(text, backgroundColor, textColor) {
         const svg = `
             <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35">
@@ -23,22 +29,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="${textColor}" font-size="16" font-family="Montserrat, sans-serif" font-weight="600">${text}</text>
             </svg>
         `;
-        // Codificamos el SVG para usarlo como URL de datos (Data URL)
         return `data:image/svg+xml;base64,${btoa(svg)}`;
     }
 
     const BOT_AVATAR_URL = createAvatarUrl('AI', '#1A1A1A', '#D4AF37'); 
     const USER_AVATAR_URL = createAvatarUrl('TÚ', '#D4AF37', '#1A1A1A'); 
 
-    // --- Variables de Estado ---
+    // --- Variables de Estado (Chatbot) ---
     let recognition; 
     let isListening = false;
     let isSpeakingEnabled = true; 
     
-    // --- Funciones Principales ---
+    // --- Funciones Principales (Chatbot) ---
     function toggleChat() {
         chatContainer.classList.toggle('open');
         if (chatContainer.classList.contains('open') && messagesDiv.children.length === 0) {
+            // Inicia la conversación con el payload de saludo
             sendPayload('/saludar', ''); 
             userInput.focus();
         }
@@ -61,9 +67,18 @@ document.addEventListener('DOMContentLoaded', () => {
         bubble.classList.add('bubble');
         
         const textElement = document.createElement('div');
-        textElement.innerHTML = text;
+        textElement.innerHTML = text; // Usamos innerHTML para renderizar <strong>, etc.
         bubble.appendChild(textElement);
 
+        // Renderizar imágenes (Mapas) si el bot las envía
+        if (customData.image) {
+            const imageElement = document.createElement('img');
+            imageElement.src = customData.image;
+            imageElement.classList.add('chat-image'); // (Deberás añadir un estilo CSS para .chat-image)
+            bubble.appendChild(imageElement);
+        }
+
+        // Renderizar enlaces/botones
         if (customData.link) {
             const linkElement = document.createElement('a');
             linkElement.href = customData.link;
@@ -96,7 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(RASA_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sender: 'user', message: message })
+                // Envía el RASA_SENDER_ID
+                body: JSON.stringify({ sender: RASA_SENDER_ID, message: message })
             });
 
             const data = await response.json();
@@ -107,9 +123,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const messageText = botMessage.text || '';
                     const custom = botMessage.custom || {};
                     
+                    // Detecta si el bot nos dio un User ID (tras login)
+                    if (custom.user_id) {
+                        RASA_SENDER_ID = custom.user_id;
+                        localStorage.setItem('vinai_user_id', RASA_SENDER_ID);
+                        console.log(`Usuario logueado. Sender ID es ahora: ${RASA_SENDER_ID}`);
+                    }
+                    
                     addMessage('bot', messageText, { 
                         link: custom.link, 
-                        link_text: custom.link_text
+                        link_text: custom.link_text,
+                        image: botMessage.image // Acepta la imagen del bot
                     });
                     
                     if (isSpeakingEnabled && messageText) {
@@ -127,13 +151,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function sendPayload(payload, title) {
-        addMessage('user', title); 
+        if (title) { // Solo muestra el mensaje de usuario si hay un título
+            addMessage('user', title); 
+        }
         showTypingIndicator(true);
         try {
             const response = await fetch(RASA_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sender: 'user', message: payload })
+                // Envía el RASA_SENDER_ID
+                body: JSON.stringify({ sender: RASA_SENDER_ID, message: payload })
             });
             const data = await response.json();
             showTypingIndicator(false);
@@ -142,10 +169,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (const botMessage of data) {
                     const messageText = botMessage.text || '';
                     const custom = botMessage.custom || {};
+
+                    // Detecta si el bot nos dio un User ID (tras login)
+                     if (custom.user_id) {
+                        RASA_SENDER_ID = custom.user_id;
+                        localStorage.setItem('vinai_user_id', RASA_SENDER_ID);
+                        console.log(`Usuario logueado. Sender ID es ahora: ${RASA_SENDER_ID}`);
+                    }
                     
                     addMessage('bot', messageText, { 
                         link: custom.link, 
-                        link_text: custom.link_text
+                        link_text: custom.link_text,
+                        image: botMessage.image // Acepta la imagen del bot
                     });
                     
                     if (isSpeakingEnabled && messageText) {
@@ -190,29 +225,183 @@ document.addEventListener('DOMContentLoaded', () => {
         speechSynthesis.speak(utterance);
     }
 
-    // --- Inicialización y Asignación de Eventos ---
-    initSpeechRecognition();
+    // --- Inicialización y Asignación de Eventos (Chatbot) ---
+    initSpeechRecognition(); //
 
-    chatBubble.addEventListener('click', toggleChat);
-    closeButton.addEventListener('click', toggleChat);
-    sendButton.addEventListener('click', () => sendMessageToRasa(userInput.value));
-    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessageToRasa(userInput.value); });
+    chatBubble.addEventListener('click', toggleChat); //
+    closeButton.addEventListener('click', toggleChat); //
+    sendButton.addEventListener('click', () => sendMessageToRasa(userInput.value)); //
+    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessageToRasa(userInput.value); }); //
 
-    voiceButton.addEventListener('click', () => {
+    voiceButton.addEventListener('click', () => { //
         if (!recognition) return;
         if (isListening) { recognition.stop(); } 
         else { try { recognition.start(); } catch(e) { console.error("Error al iniciar escucha:", e); } }
     });
 
-    speakerButton.addEventListener('click', () => {
+    speakerButton.addEventListener('click', () => { //
         isSpeakingEnabled = !isSpeakingEnabled;
         speakerButton.innerHTML = isSpeakingEnabled ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
         if (!isSpeakingEnabled) speechSynthesis.cancel(); 
     });
 
-    document.querySelectorAll('#quick-replies button').forEach(button => {
+    document.querySelectorAll('#quick-replies button').forEach(button => { //
         button.addEventListener('click', () => {
             sendPayload(button.dataset.payload, button.textContent);
         });
     });
-});
+
+    // ------------------------------------------------------------------
+    // --- LÓGICA DEL MODAL DE LOGIN/REGISTRO DE USUARIO ---
+    // ------------------------------------------------------------------
+
+    // --- Selección de Elementos del Modal ---
+    const userModalBackdrop = document.getElementById('user-modal-backdrop');
+    const userModal = document.getElementById('user-modal');
+    const modalCloseButton = document.getElementById('modal-close-button');
+    // Busca el enlace "Usuario" en la navbar
+    const userNavLink = document.querySelector('.nav-link[href="http://localhost:8080/login"]'); 
+    const navUsernameSpan = document.createElement('span'); // Para mostrar "Hola, Usuario"
+    navUsernameSpan.style.marginRight = '15px';
+    navUsernameSpan.style.color = '#D4AF37';
+    navUsernameSpan.style.fontWeight = '700';
+
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const showRegisterLink = document.getElementById('show-register-link');
+    const showLoginLink = document.getElementById('show-login-link');
+    const modalTitle = document.getElementById('modal-title');
+    
+    const loginError = document.getElementById('login-error');
+    const registerError = document.getElementById('register-error');
+
+    // --- Funciones del Modal ---
+    function openModal() {
+        userModalBackdrop.style.display = 'block';
+        userModal.style.display = 'block';
+    }
+    function closeModal() {
+        userModalBackdrop.style.display = 'none';
+        userModal.style.display = 'none';
+        loginError.textContent = '';
+        registerError.textContent = '';
+    }
+    function showRegisterForm() {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+        showRegisterLink.style.display = 'none';
+        showLoginLink.style.display = 'block';
+        modalTitle.textContent = 'Crear Cuenta';
+    }
+    function showLoginForm() {
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+        showRegisterLink.style.display = 'block';
+        showLoginLink.style.display = 'none';
+        modalTitle.textContent = 'Iniciar Sesión';
+    }
+
+    // --- Asignación de Eventos del Modal ---
+    if (userNavLink) {
+        userNavLink.href = "javascript:void(0);"; // Anulamos el enlace al admin login
+        userNavLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Comprueba si el usuario YA está logueado
+            if (localStorage.getItem('vinai_user_id')) {
+                if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                    localStorage.removeItem('vinai_user_id');
+                    location.reload(); // Recarga la página para limpiar todo
+                }
+            } else {
+                // Si no está logueado, abre el modal de login
+                openModal();
+                showLoginForm();
+            }
+        });
+    }
+    
+    modalCloseButton.addEventListener('click', closeModal);
+    userModalBackdrop.addEventListener('click', closeModal);
+    showRegisterLink.addEventListener('click', showRegisterForm);
+    showLoginLink.addEventListener('click', showLoginForm);
+
+    // --- Evento de Formulario de Login ---
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        loginError.textContent = '';
+        const email = loginForm.email.value;
+        const password = loginForm.password.value;
+
+        try {
+            // Llama a la nueva ruta pública en admin_app.py
+            const response = await fetch('/public_login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // ¡Éxito! Actualizamos el RASA_SENDER_ID global
+                RASA_SENDER_ID = data.user_id;
+                localStorage.setItem('vinai_user_id', data.user_id); 
+                
+                // Actualizamos la barra de navegación
+                navUsernameSpan.textContent = `Hola, ${data.username}`;
+                userNavLink.parentElement.prepend(navUsernameSpan);
+                userNavLink.textContent = 'Cerrar Sesión';
+                
+                closeModal();
+                sendPayload('/saludar', ''); // Saluda al bot ya logueado
+            } else {
+                loginError.textContent = data.message;
+            }
+        } catch (err) {
+            loginError.textContent = 'Error de conexión con el servidor.';
+        }
+    });
+
+    // --- Evento de Formulario de Registro ---
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        registerError.textContent = '';
+        const username = registerForm.username.value;
+        const email = registerForm.email.value;
+        const password = registerForm.password.value;
+
+        try {
+            // === NOVEDAD: URL Absoluta al puerto 8080 ===
+            const response = await fetch('http://localhost:8080/public_register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                showLoginForm();
+                loginError.textContent = data.message; 
+            } else {
+                registerError.textContent = data.message;
+            }
+        } catch (err) {
+            registerError.textContent = 'Error de conexión con el servidor.';
+        }
+    });
+
+    // --- Lógica al Cargar la Página (para ver si ya está logueado) ---
+    if (localStorage.getItem('vinai_user_id')) {
+         userNavLink.textContent = 'Cerrar Sesión';
+    }
+
+    // --- Lógica al Cargar la Página (para ver si ya está logueado) ---
+    if (localStorage.getItem('vinai_user_id')) {
+         userNavLink.textContent = 'Cerrar Sesión';
+         // (Opcional: podríamos hacer un fetch a /get_user_details para obtener el nombre)
+         // Por ahora, solo cambiar el texto es suficiente.
+    }
+
+}); // Cierre del 'DOMContentLoaded'

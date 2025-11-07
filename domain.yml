@@ -8,8 +8,12 @@ intents:
   - informar_gusto
   - buscar_tour_vina
   - recomendar_tour
-  # === NOVEDAD: Intent para reconocer cuando se especifica un año ===
   - informar_ano
+  # === NOVEDAD: Intents de Perfil ===
+  - registrar_usuario
+  - iniciar_sesion
+  - guardar_preferencia_vino
+  - valorar_tour
 
 # --- ENTITIES (Entidades que el bot debe extraer del texto) ---
 entities:
@@ -21,6 +25,9 @@ entities:
   - caracteristica
   - maridaje
   - ano
+  # === NOVEDAD: Entidades de Perfil ===
+  - email
+  - password
 
 # --- SLOTS (Variables donde se guarda la información) ---
 slots:
@@ -66,13 +73,30 @@ slots:
     - type: from_entity
       entity: maridaje
 
-  # === NOVEDAD: Slot para guardar el año en la memoria del bot ===
   slot_ano:
     type: text
     influence_conversation: true
     mappings:
     - type: from_entity
       entity: ano
+
+  # === NOVEDAD: Slots de Sesión ===
+  slot_email:
+    type: text
+    influence_conversation: false
+    mappings:
+    - type: from_entity
+      entity: email
+  slot_password:
+    type: text
+    influence_conversation: false
+    mappings:
+    - type: from_entity
+      entity: password
+  slot_user_id: # Guardará el ID del usuario logueado
+    type: text
+    influence_conversation: true
+    mappings: [] # Se llena solo desde la action
 
 # --- ACTIONS (Acciones que el bot puede ejecutar) ---
 actions:
@@ -82,14 +106,43 @@ actions:
   - utter_saludar
   - utter_despedirse
   - utter_pedir_gusto
+  # === NOVEDAD: Actions de Perfil ===
+  - action_registrar_usuario
+  - action_iniciar_sesion
+  - action_guardar_preferencia
+  - action_valorar_tour
+  # === NOVEDAD: Responses de Perfil ===
+  - utter_pedir_email
+  - utter_pedir_password
+  - utter_ya_estas_logueado
+  - utter_registro_exitoso
+  - utter_login_exitoso
+  - utter_login_fallido
+  - utter_preferencia_guardada
   
 # --- RESPONSES (Respuestas predefinidas del bot) ---
 responses:
   utter_saludar:
-    - text: "¡Hola! Soy VinAI, tu sommelier virtual. ¿Buscas un vino para una ocasión especial, o quieres saber sobre tours de viñas?"
+    - text: "¡Hola! Soy VinAI, tu sommelier virtual. Puedes pedirme una recomendación de vino, buscar un tour o 'iniciar sesión' para usar tus preferencias guardadas."
   
   utter_despedirse:
     - text: "¡Adiós! Que tengas un excelente día y salud."
     
   utter_pedir_gusto:
     - text: "¡Claro! Para recomendarte el vino perfecto, ¿podrías decirme qué tipo de vino prefieres (tinto, blanco, etc.), alguna cepa o con qué comida lo vas a maridar?"
+
+  # === NOVEDAD: Responses de Perfil ===
+  utter_pedir_email:
+    - text: "Perfecto, ¿cuál es tu email?"
+  utter_pedir_password:
+    - text: "Gracias, ¿cuál es tu contraseña?"
+  utter_ya_estas_logueado:
+    - text: "¡Ya has iniciado sesión!"
+  utter_registro_exitoso:
+    - text: "¡Genial! Tu cuenta ha sido creada. Ya puedes iniciar sesión."
+  utter_login_exitoso:
+    - text: "¡Bienvenido de nuevo! He iniciado sesión con tu cuenta."
+  utter_login_fallido:
+    - text: "Lo siento, no pude verificar tus credenciales. ¿El email y contraseña son correctos?"
+  utter_preferencia_guardada:
+    - text: "¡Entendido! He guardado esa preferencia en tu perfil."

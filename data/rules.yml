@@ -34,3 +34,24 @@ rules:
   steps:
   - intent: recomendar_tour
   - action: action_recomendar_tour_db
+
+# === NOVEDAD: Rules de Perfil ===
+- rule: Activar registro
+  steps:
+  - intent: registrar_usuario
+  - action: action_registrar_usuario
+
+- rule: Activar login
+  steps:
+  - intent: iniciar_sesion
+  - action: action_iniciar_sesion
+
+- rule: Guardar preferencia
+  steps:
+  - intent: guardar_preferencia_vino
+  - action: action_guardar_preferencia
+
+- rule: Valorar tour
+  steps:
+  - intent: valorar_tour
+  - action: action_valorar_tour

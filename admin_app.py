@@ -1,12 +1,19 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import mysql.connector
 import subprocess
 import os
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# === NOVEDAD: Importar CORS ===
+from flask_cors import CORS
+
 app = Flask(__name__)
 app.secret_key = 'cambia_esto_por_algo_muy_secreto_y_largo!'
+
+# === NOVEDAD: Habilitar CORS para toda la aplicación ===
+# Esto permitirá que localhost:8000 (tu index.html) hable con localhost:8080 (esta app)
+CORS(app)
 
 # --- Configuración de la DB ---
 DB_CONFIG = {
@@ -157,21 +164,18 @@ def add_wine():
             flash(f"Error al añadir el vino: {err}", 'error')
     return redirect(url_for('admin_panel'))
 
-# --- Ruta ÚNICA para Añadir Viña (con latitud y longitud) ---
+# --- Ruta para Añadir Viña (con latitud y longitud) ---
 @app.route('/add_vina', methods=['POST'])
 @login_required
 def add_vina():
-    # 1. Obtener datos del formulario
     nombre = request.form['nombre']
     valle = request.form['valle']
     descripcion_tour = request.form['descripcion_tour']
     horario_tour = request.form['horario_tour']
     link_web = request.form['link_web']
-    # Nuevos campos de coordenadas
-    latitud = request.form.get('latitud') # .get() para que sea opcional
+    latitud = request.form.get('latitud')
     longitud = request.form.get('longitud')
     
-    # Convertir a None si están vacíos, para que la DB acepte NULL
     latitud = latitud if latitud else None
     longitud = longitud if longitud else None
 
@@ -179,12 +183,10 @@ def add_vina():
     if conn:
         try:
             cursor = conn.cursor()
-            # 2. Crear la consulta SQL actualizada
             query = """
                 INSERT INTO vinas (nombre, valle, descripcion_tour, horario_tour, link_web, latitud, longitud) 
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            # 3. Ejecutar la consulta
             cursor.execute(query, (nombre, valle, descripcion_tour, horario_tour, link_web, latitud, longitud))
             conn.commit()
             cursor.close()
@@ -290,11 +292,10 @@ def rasa_train():
         flash(f"Error inesperado al ejecutar el entrenamiento: {e}", 'error')
         
     return redirect(url_for('admin_panel'))
+
 # ----------------------------------------------
 # --- RUTAS PÚBLICAS (Para el Modal de Usuario) ---
 # ----------------------------------------------
-from flask import jsonify # Asegúrate de añadir 'jsonify' a tus imports de flask al inicio
-
 @app.route('/public_register', methods=['POST'])
 def public_register():
     data = request.json
@@ -312,7 +313,6 @@ def public_register():
         
     try:
         cursor = conn.cursor()
-        # Inserta en la tabla 'usuarios'
         query = "INSERT INTO usuarios (username, email, password_hash) VALUES (%s, %s, %s)"
         cursor.execute(query, (username, email, password_hash))
         conn.commit()
@@ -341,16 +341,15 @@ def public_login():
 
     try:
         cursor = conn.cursor(dictionary=True)
-        # Busca en la tabla 'usuarios'
         cursor.execute("SELECT id, username, password_hash FROM usuarios WHERE email = %s", (email,))
         user = cursor.fetchone()
         
         if user and check_password_hash(user['password_hash'], password_plana):
-            user_id_str = f"user_{user['id']}" # Este es el ID que usará Rasa/bot.js
+            user_id_str = f"user_{user['id']}"
             return jsonify({
                 "success": True, 
                 "message": f"¡Bienvenido, {user['username']}!",
-                "user_id": user_id_str, # Enviamos el ID al frontend
+                "user_id": user_id_str,
                 "username": user['username']
             })
         else:
@@ -360,7 +359,7 @@ def public_login():
         return jsonify({"success": False, "message": f"Error de base de datos: {err}"}), 500
     finally:
         if conn: conn.close()
-        
+
 # --- Iniciar el servidor del panel ---
 if __name__ == '__main__':
     app.run(debug=True, port=8080)

@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showRegisterLink.addEventListener('click', showRegisterForm);
     showLoginLink.addEventListener('click', showLoginForm);
 
-    // --- Evento de Formulario de Login ---
+// --- Evento de Formulario de Login ---
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginError.textContent = '';
@@ -334,8 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = loginForm.password.value;
 
         try {
-            // Llama a la nueva ruta pública en admin_app.py
-            const response = await fetch('/public_login', {
+            // === NOVEDAD: URL Absoluta al puerto 8080 ===
+            const response = await fetch('http://localhost:8080/public_login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
@@ -344,17 +344,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (data.success) {
-                // ¡Éxito! Actualizamos el RASA_SENDER_ID global
                 RASA_SENDER_ID = data.user_id;
                 localStorage.setItem('vinai_user_id', data.user_id); 
-                
-                // Actualizamos la barra de navegación
                 navUsernameSpan.textContent = `Hola, ${data.username}`;
                 userNavLink.parentElement.prepend(navUsernameSpan);
                 userNavLink.textContent = 'Cerrar Sesión';
-                
                 closeModal();
-                sendPayload('/saludar', ''); // Saluda al bot ya logueado
+                sendPayload('/saludar', ''); 
             } else {
                 loginError.textContent = data.message;
             }

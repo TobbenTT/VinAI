@@ -47,27 +47,33 @@ rules:
   - action: action_recomendar_tour_db
 # --- Fin de reglas de "no interrupción" ---
 
+# === INICIO DE LA CORRECCIÓN ===
+
+# REGLA 1: Activa el formulario
 - rule: Activar formulario de valoración
   steps:
   - intent: valorar_tour
   - action: valorar_tour_form
   - active_loop: valorar_tour_form
 
-# === INICIO DE LA CORRECCIÓN ===
-# Esta regla simple maneja la sumisión del formulario.
-# Se activa cuando el formulario termina (active_loop: null)
-# y simplemente escucha, permitiendo que 'actions.py'
-# envíe el mensaje de "¡Listo!..."
-- rule: Enviar formulario de valoración
+# REGLA 2: Maneja la sumisión del formulario
+# Esta es la regla que faltaba y que arregla el error.
+# Le dice a RASA qué hacer DESPUÉS de que el formulario se desactiva.
+- rule: Guardar valoración después de completar el formulario
   condition:
+  # Esta condición se cumple cuando el formulario pide 'null' (es decir, terminó)
   - active_loop: valorar_tour_form
-  steps:
-  - action: valorar_tour_form
-  - active_loop: null
   - slot_was_set:
     - requested_slot: null
+  steps:
+  # El formulario se desactiva
+  - action: valorar_tour_form
+  - active_loop: null
+  # ¡Llamamos a nuestra nueva acción de guardado!
+  - action: action_guardar_valoracion_db
   - action: action_listen
-# === FIN DE LA CORRECCIÓN ===
+
+# === FIN DE LA CORRECIÓN ===
   
 - rule: Responder a la petición de ayuda
   steps:

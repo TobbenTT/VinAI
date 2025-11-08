@@ -14,9 +14,7 @@ intents:
   - valorar_tour
   - pedir_ayuda
   - informar_rating
-  # === Intents de botones eliminados ===
-  # - afirmar_comentario (ELIMINADO)
-  # - negar_comentario   (ELIMINADO)
+  - informar_comentario # (Esto está correcto)
 
 entities:
   - cepa
@@ -122,19 +120,11 @@ slots:
       - active_loop: valorar_tour_form
         requested_slot: slot_rating
   
-  # === INICIO DE LA MODIFICACIÓN ===
+  # Este es el slot corregido de la vez anterior (está bien)
   slot_comentario:
     type: text
     influence_conversation: false
     mappings:
-    # 1. Mapear desde el nuevo intent
-    - type: from_intent
-      intent: informar_comentario
-      value: "Valor extraído del intent" # El valor real lo toma del texto
-      conditions:
-      - active_loop: valorar_tour_form
-        requested_slot: slot_comentario
-    # 2. Mapear desde texto libre (si el intent falla)
     - type: from_text
       conditions:
       - active_loop: valorar_tour_form
@@ -170,8 +160,8 @@ actions:
   - utter_ask_slot_rating
   - utter_ask_slot_comentario
   - utter_valoracion_guardada
-  # --- Acción eliminada ---
-  # - utter_puedes_escribir (ELIMINADO)
+  # === ¡NUEVA ACCIÓN REGISTRADA! ===
+  - action_guardar_valoracion_db
   
 responses:
   utter_saludar:
@@ -199,22 +189,16 @@ responses:
     - text: "¡Entendido! He guardado esa preferencia en tu perfil."
 
   utter_ayuda:
-    - text: "¡Claro! Soy VinAI, tu asistente de vinos y enoturismo. Puedo ayudarte con esto:<br><br>* **Recomendar Vinos:** Pídeme un vino por cepa, año, maridaje o características (ej. 'recomiéndame un tinto para carnes').<br>* **Buscar Tours:** Pregúntame por tours en una viña específica (ej. '¿qué tours hay en Santa Rita?').<br>* **Recomendar Tours:** Pídeme que te recomiende un tour por valle (ej. 'recomiéndame un tour en Colchagua').<br>* **Crear tu Perfil:** Escribe 'iniciar sesión' o 'registrarme' para guardar tus gustos.<br>* **Guardar Gustos:** Si iniciaste sesión, puedes decirme 'guarda que me gusta el Carmenere'.<br>* **Valorar Tours:** Si iniciaste sesión, puedes decir 'quiero valorar Montes con 5 estrellas'."
+    - text: "¡Claro! Soy VinAI, tu asistente de vinos y enoturismo. Puedo ayudarte con esto:<br><br>* **Recomendar Vinos:** Pídeme un vino por cepa, año, maridaje o características (ej. 'recomiéndAME UN tinto para carnes').<br>* **Buscar Tours:** Pregúntame por tours en una viña específica (ej. '¿qué tours hay en Santa Rita?').<br>* **Recomendar Tours:** Pídeme que te recomiende un tour por valle (ej. 'recomiéndame un tour en Colchagua').<br>* **Crear tu Perfil:** Escribe 'iniciar sesión' o 'registrarme' para guardar tus gustos.<br>* **Guardar Gustos:** Si iniciaste sesión, puedes decirme 'guarda que me gusta el Carmenere'.<br>* **Valorar Tours:** Si iniciaste sesión, puedes decir 'quiero valorar Montes con 5 estrellas'."
 
   # --- Responses del Formulario ---
   utter_ask_slot_vina_a_valorar:
     - text: "¿Qué viña te gustaría valorar?"
   utter_ask_slot_rating:
     - text: "¡Perfecto! ¿Qué puntaje del 1 al 5 le das a {slot_vina_a_valorar}?"
-
-  # === INICIO DE LA MODIFICACIÓN ===
+  
   utter_ask_slot_comentario:
     - text: "Gracias. Por favor, escribe un breve comentario sobre tu experiencia (o escribe 'no' si prefieres no comentar)."
-      # Botones eliminados
-  # === FIN DE MODIFICACIÓN ===
-  
-  # --- Respuesta eliminada ---
-  # utter_puedes_escribir: (ELIMINADO)
   
   utter_valoracion_guardada:
     - text: "¡Listo! He guardado tu valoración para {slot_vina_a_valorar}. ¡Gracias por tu feedback!"

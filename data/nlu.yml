@@ -111,15 +111,17 @@ nlu:
     - [1](rating_number) estrella
     - [2](rating_number)
 
-- intent: informar_comentario
+- intent: afirmar_comentario
   examples: |
-    - el tour fue increíble
-    - me encantó el guía
-    - horrible, no lo recomiendo
-    - fue una gran experiencia
+    - /afirmar_comentario
+    - quiero escribir un comentario
+    - si
+
+- intent: negar_comentario
+  examples: |
+    - /negar_comentario
+    - no quiero escribir un comentario
     - no
-    - no gracias
-    - sin comentario
 
 # --- (Lookups) ---
 - lookup: caracteristica
@@ -127,65 +129,27 @@ nlu:
     - Robusto
     - Fresco
     - Seco
-    - Dulce
-    - Orgánico
-    - Reserva
-    - Ligero
-    - Mineral
-    - Biodinámico
-    - Joven
 - lookup: maridaje
   examples: |
     - Parrillada
     - Sushi
-    - Charcutería
-    - Pescado Blanco
-    - Postres
-    - Comida Asiatica
-    - Pizza
-    - Pastas con Salsa Roja
-    - Mariscos
-    - Ensaladas
 - lookup: sabor_nota
   examples: |
     - Vainilla
     - Guinda
-    - Pimienta
-    - Manzana
-    - Cítrico
-    - Chocolate
-    - Cereza
-    - Durazno
-    - Miel
-    - Tabaco
-    - Hierba
-    - Café
-    - Frambuesa
 - lookup: cepa
   examples: |
     - Cabernet Sauvignon
     - Carmenere
-    - Merlot
-    - Pinot Noir
-    - Chardonnay
-    - Sauvignon Blanc
 - lookup: tipo_vino
   examples: |
     - tinto
     - blanco
-    - rosado
-    - espumante
 - lookup: valle
   examples: |
     - Maipo
     - Colchagua
-    - Aconcagua
-    - Casablanca
-    - Leyda
 - lookup: vina
   examples: |
     - Concha y Toro
     - Santa Rita
-    - Casa Silva
-    - Montes
-    - Viña Errázuriz

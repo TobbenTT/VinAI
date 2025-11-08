@@ -10,6 +10,10 @@ rules:
   - intent: despedirse
   - action: utter_despedirse
 
+# === INICIO DE LA CORRECCIÓN ===
+# Añadimos la condición "active_loop: null" para que estas
+# reglas NO interrumpan un formulario activo.
+
 - rule: Activar la recomendación de vino
   condition:
   - active_loop: null # Solo se activa si NO hay un formulario activo

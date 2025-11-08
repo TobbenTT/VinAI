@@ -1,0 +1,30 @@
+[
+  {
+    "name": "caracteristica",
+    "pattern": "(\\bRobusto\\b|\\bFresco\\b|\\bSeco\\b)"
+  },
+  {
+    "name": "maridaje",
+    "pattern": "(\\bParrillada\\b|\\bSushi\\b)"
+  },
+  {
+    "name": "sabor_nota",
+    "pattern": "(\\bVainilla\\b|\\bGuinda\\b)"
+  },
+  {
+    "name": "cepa",
+    "pattern": "(\\bCabernet\\ Sauvignon\\b|\\bCarmenere\\b)"
+  },
+  {
+    "name": "tipo_vino",
+    "pattern": "(\\btinto\\b|\\bblanco\\b)"
+  },
+  {
+    "name": "valle",
+    "pattern": "(\\bMaipo\\b|\\bColchagua\\b)"
+  },
+  {
+    "name": "vina",
+    "pattern": "(\\bConcha\\ y\\ Toro\\b|\\bSanta\\ Rita\\b)"
+  }
+]

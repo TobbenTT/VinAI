@@ -14,7 +14,9 @@ intents:
   - valorar_tour
   - pedir_ayuda
   - informar_rating
-  - informar_comentario
+  # === Intents para los botones ===
+  - afirmar_comentario 
+  - negar_comentario   
 
 entities:
   - cepa
@@ -101,7 +103,9 @@ slots:
     type: text
     influence_conversation: false
     mappings:
-    - type: from_text
+    - type: from_entity
+      entity: vina
+    - type: from_text 
       conditions:
       - active_loop: valorar_tour_form
         requested_slot: slot_vina_a_valorar
@@ -114,31 +118,29 @@ slots:
     - type: from_entity
       entity: rating_number
   
-# === INICIO DE LA CORRECCIÓN ===
+  # === CORRECCIÓN DEFINITIVA ===
   slot_comentario:
     type: text
     influence_conversation: false
     mappings:
-    # 1. Acepta un comentario normal (ej: "fue genial")
+    # 1. Si el usuario pulsa [No, gracias]
     - type: from_intent
-      intent: informar_comentario
-      value: "placeholder" # El valor no importa, actions.py usará el texto
+      intent: negar_comentario
+      value: "Sin comentario" 
       
-    # 2. Acepta explícitamente la intención 'deny' (ej: "no")
+    # 2. Si el usuario pulsa [Escribir Comentario]
     - type: from_intent
-      intent: deny
-      value: "no" # Le pasamos el texto "no" a la action
+      intent: afirmar_comentario
+      value: "ESCRIBIENDO" # Valor temporal
 
-    # 3. Acepta cualquier otro texto que no sea un 'deny'
+    # 3. Si el usuario escribe texto (y el formulario espera el comentario)
+    #    (Se eliminó la condición errónea 'slot_comentario: "ESCRIBIENDO"')
     - type: from_text
-      intent:
-      - not: deny
       conditions:
       - active_loop: valorar_tour_form
         requested_slot: slot_comentario
-  # === FIN DE LA CORRECCIÓN ===
+  # === FIN DE CORRECCIÓN ===
 
-# === SECCIÓN 'FORMS' QUE FALTABA ===
 forms:
   valorar_tour_form:
     required_slots:
@@ -156,7 +158,7 @@ actions:
   - action_registrar_usuario
   - action_iniciar_sesion
   - action_guardar_preferencia
-  - validate_valorar_tour_form # Esta es la acción correcta para el formulario
+  - validate_valorar_tour_form 
   - utter_ayuda
   - utter_pedir_email
   - utter_pedir_password
@@ -169,6 +171,8 @@ actions:
   - utter_ask_slot_rating
   - utter_ask_slot_comentario
   - utter_valoracion_guardada
+  # --- Acción faltante añadida ---
+  - utter_puedes_escribir
   
 responses:
   utter_saludar:
@@ -195,7 +199,6 @@ responses:
   utter_preferencia_guardada:
     - text: "¡Entendido! He guardado esa preferencia en tu perfil."
 
-  # === CORRECCIÓN DE INDENTACIÓN ===
   utter_ayuda:
     - text: "¡Claro! Soy VinAI, tu asistente de vinos y enoturismo. Puedo ayudarte con esto:<br><br>* **Recomendar Vinos:** Pídeme un vino por cepa, año, maridaje o características (ej. 'recomiéndame un tinto para carnes').<br>* **Buscar Tours:** Pregúntame por tours en una viña específica (ej. '¿qué tours hay en Santa Rita?').<br>* **Recomendar Tours:** Pídeme que te recomiende un tour por valle (ej. 'recomiéndame un tour en Colchagua').<br>* **Crear tu Perfil:** Escribe 'iniciar sesión' o 'registrarme' para guardar tus gustos.<br>* **Guardar Gustos:** Si iniciaste sesión, puedes decirme 'guarda que me gusta el Carmenere'.<br>* **Valorar Tours:** Si iniciaste sesión, puedes decir 'quiero valorar Montes con 5 estrellas'."
 
@@ -204,7 +207,18 @@ responses:
     - text: "¿Qué viña te gustaría valorar?"
   utter_ask_slot_rating:
     - text: "¡Perfecto! ¿Qué puntaje del 1 al 5 le das a {slot_vina_a_valorar}?"
+
   utter_ask_slot_comentario:
-    - text: "Gracias. ¿Te gustaría añadir un comentario? (o puedes decir 'no')"
+    - text: "Gracias. ¿Te gustaría añadir un comentario?"
+      buttons:
+      - title: "Escribir Comentario"
+        payload: /afirmar_comentario
+      - title: "No, gracias"
+        payload: /negar_comentario
+
+  # --- Respuesta faltante añadida ---
+  utter_puedes_escribir:
+    - text: "Adelante, escribe tu comentario."
+  
   utter_valoracion_guardada:
     - text: "¡Listo! He guardado tu valoración para {slot_vina_a_valorar}. ¡Gracias por tu feedback!"

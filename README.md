@@ -80,7 +80,7 @@ rasa train
 ```
 
 ### Terminales
-Necesitarás abrir **4 terminales separadas** y mantenerlas todas corriendo.
+Necesitarás abrir **4 terminales separadas** y mantenerlas todas corriendo. o Inicias el archivo start_all.bat y lo hara solo
 
 ---
 ### Terminal 1: Servidor Web (Frontend)
@@ -111,6 +111,7 @@ Necesitarás abrir **4 terminales separadas** y mantenerlas todas corriendo.
 * **Propósito:** Es el "cerebro". Procesa el lenguaje (NLU) y maneja la conversación.
 * **Comando:**
     > rasa run --enable-api --cors "*" --debug
+    > 
 
 ### HELP
 Dentro del proyecto existe un txt llamado help por si algo Llegara a fallar

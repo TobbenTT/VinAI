@@ -1,0 +1,85 @@
+=============================================================
+ INSTRUCCIONES DE INSTALACIÓN Y EJECUCIÓN - PROYECTO VinAI
+=============================================================
+
+Este documento explica cómo instalar y ejecutar el proyecto VinAI Sommelier localmente.
+
+=============================================================
+ REQUISITOS PREVIOS (Instalación única)
+=============================================================
+
+Antes de ejecutar, asegúrate de tener:
+
+1.  **Python 3.10+** instalado.
+2.  Un **servidor MySQL** (como XAMPP, WAMP o MariaDB) instalado y en ejecución.
+3.  Creada una base de datos vacía llamada: `vinai_db_normalizada`.
+4.  Importado el archivo `vinai_db_normalizada.sql` en esa base de datos.
+
+=============================================================
+ PASO 1: INSTALACIÓN DE DEPENDENCIAS
+=============================================================
+
+1.  (Recomendado) Crea y activa un entorno virtual de Python:
+    > python -m venv venv
+    > .\venv\Scripts\activate
+
+2.  Instala todas las librerías de Python necesarias:
+    > pip install -r requirements.txt
+
+=============================================================
+ PASO 2: ENTRENAMIENTO INICIAL DEL MODELO
+=============================================================
+
+Antes de iniciar los servidores por primera vez, debes entrenar el modelo de IA.
+
+1.  Ejecuta el comando de entrenamiento de Rasa:
+    > rasa train
+
+=============================================================
+ PASO 3: EJECUTAR LOS 4 SERVIDORES
+=============================================================
+
+Necesitarás abrir **4 terminales separadas** y mantenerlas todas corriendo.
+
+---
+### Terminal 1: Servidor Web (Frontend)
+---
+* **Propósito:** Sirve los archivos estáticos (index.html, bot.js, style.css).
+* **Comando:**
+    > python -m http.server 8000
+* **Acceso:** Abre el chat en tu navegador en `http://localhost:8000/index.html`.
+
+---
+### Terminal 2: Servidor Backend (Flask Admin)
+---
+* **Propósito:** Ejecuta el panel de administración, perfiles y sistema de login.
+* **Comando:**
+    > python admin_app.py
+* **Acceso:** Accede al panel de admin en `http://localhost:8080/login`.
+
+---
+### Terminal 3: Servidor de Acciones (Rasa Actions)
+---
+* **Propósito:** Es el "hacedor". Ejecuta la lógica personalizada (conectar a la BD, guardar valoraciones).
+* **Comando:**
+    > rasa run actions --debug
+
+---
+### Terminal 4: Servidor Central (Rasa Core)
+---
+* **Propósito:** Es el "cerebro". Procesa el lenguaje (NLU) y maneja la conversación.
+* **Comando:**
+    > rasa run --enable-api --cors "*" --debug
+
+=============================================================
+ WORKFLOW: CÓMO ACTUALIZAR EL BOT
+=============================================================
+
+Si llegaras a modificar CUALQUIER archivo `.yml` (como `domain.yml`, `nlu.yml` o `rules.yml`):
+
+1.  **Detén** los servidores de Rasa (Terminal 3 y Terminal 4).
+2.  En una terminal, **re-entrena** el modelo con tus cambios:
+    > rasa train
+3.  Vuelve a **iniciar** los servidores de la Terminal 3 y Terminal 4.
+
+(Si solo modificas `actions.py`, solo necesitas reiniciar la Terminal 3).

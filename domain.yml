@@ -110,6 +110,7 @@ slots:
       - active_loop: valorar_tour_form
         requested_slot: slot_vina_a_valorar
 
+# === INICIO DE LA CORRECCIÓN ===
   slot_rating:
     type: categorical
     values: ["1", "2", "3", "4", "5"] 
@@ -117,8 +118,13 @@ slots:
     mappings:
     - type: from_entity
       entity: rating_number
+    # Añadimos un fallback para que acepte texto plano
+    # y deje que 'validate_slot_rating' en actions.py haga el trabajo
+    - type: from_text
+      conditions:
+      - active_loop: valorar_tour_form
+        requested_slot: slot_rating
   
-  # === CORRECCIÓN DEFINITIVA ===
   slot_comentario:
     type: text
     influence_conversation: false

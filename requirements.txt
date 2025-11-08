@@ -1,0 +1,6 @@
+rasa
+mysql-connector-python
+Flask
+Flask-Login
+Flask-Cors
+Werkzeug
